@@ -1,0 +1,37 @@
+WITH SalaryCTE AS (
+    SELECT 
+        e.employee_id,
+        e.name,
+        d.department_name,
+        s.salary,
+        s.salary_date,
+        SUM(s.salary) OVER (ORDER BY s.salary_date) AS running_total,
+        RANK() OVER (PARTITION BY d.department_name ORDER BY s.salary DESC) AS salary_rank
+    FROM 
+        employees e
+    JOIN 
+        departments d ON e.department_id = d.department_id
+    JOIN 
+        (SELECT 
+             employee_id, 
+             salary, 
+             salary_date 
+         FROM 
+             salaries 
+         WHERE 
+             salary_date = (SELECT MAX(salary_date) FROM salaries WHERE employee_id = salaries.employee_id)
+        ) s ON e.employee_id = s.employee_id
+)
+SELECT 
+    employee_id,
+    name,
+    department_name,
+    salary,
+    salary_date,
+    running_total,
+    salary_rank
+FROM 
+    SalaryCTE
+ORDER BY 
+    department_name, 
+    salary_rank;
